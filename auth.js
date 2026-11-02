@@ -1,0 +1,14 @@
+/* Trainer login / registration / forgot-password screens (Email + Password). */
+import * as F from './firebase-service.js';
+import {esc} from './game-engine.js';
+let root,done;
+const E={'auth/invalid-credential':'Wrong email or password.','auth/wrong-password':'Wrong email or password.','auth/user-not-found':'No account with this email.','auth/email-already-in-use':'This email is already registered. Try logging in.','auth/weak-password':'Password must be at least 6 characters.','auth/invalid-email':'Please enter a valid email.','auth/too-many-requests':'Too many attempts. Wait a few minutes and try again.','auth/operation-not-allowed':'Email/Password sign-in is not enabled in Firebase Console.','auth/network-request-failed':'Network problem. Check your connection.'};
+const fr=e=>E[e.code]||e.message,val=id=>document.getElementById(id).value.trim(),raw=id=>document.getElementById(id).value,msg=(m,ok)=>{const e=document.getElementById('am');e.textContent=m;e.style.color=ok?'var(--g)':'var(--r)'};
+export function show(r,cb,m='login'){root=r;done=cb;view(m)}
+function view(m){const f=(id,l,t='text')=>`<label for="${id}">${l}</label><input id="${id}" type="${t}" autocomplete="${t==='password'?(m==='login'?'current-password':'new-password'):t==='email'?'email':'name'}">`,a=(v,t)=>`<a href="#" onclick="AU.v('${v}');return false">${t}</a>`;
+  const B={login:f('em','Email','email')+f('pw','Password','password')+`<button class="btn pri" onclick="AU.login()">Log in</button><p>${a('forgot','Forgot password?')} · ${a('register','Create a trainer account')}</p>`,register:f('nm','Your name')+f('em','Email','email')+f('pw','Password (8+ characters)','password')+f('pw2','Repeat password','password')+`<button class="btn pri" onclick="AU.reg()">Create account</button><p>${a('login','Back to login')}</p>`,forgot:f('em','Email','email')+`<button class="btn pri" onclick="AU.reset()">Send reset link</button><p>${a('login','Back to login')}</p>`}[m],T={login:'Trainer login',register:'Create trainer account',forgot:'Reset your password'}[m];
+  root.innerHTML=`<div class="pw"><section class="card setup"><p class="kick">MINDSET ARENA · TRAINERS</p><h2>${T}</h2>${B}<p id="am" class="err"></p><p><a href="./" style="color:var(--m)">← Back to home</a></p></section></div>`}
+window.AU={v:view,
+ async login(){try{await F.login(val('em'),raw('pw'));localStorage.setItem('ma.t','1');done()}catch(e){msg(fr(e))}},
+ async reg(){const n=val('nm'),p=raw('pw');if(!n)return msg('Enter your name.');if(p.length<8)return msg('Password must be at least 8 characters.');if(p!==raw('pw2'))return msg('Passwords do not match.');try{await F.signUp(n,val('em'),p);localStorage.setItem('ma.t','1');done()}catch(e){msg(fr(e))}},
+ async reset(){if(!val('em'))return msg('Enter your email first.');try{await F.reset(val('em'));msg('Reset link sent. Check your inbox (and spam folder).',1)}catch(e){msg(fr(e))}}};
